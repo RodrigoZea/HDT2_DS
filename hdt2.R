@@ -11,6 +11,7 @@ library(tabulizer)
 library(dplyr)
 library(stringr)
 
+# Lectura de Datos
 pages<-extract_tables("data.pdf") #datos2020
 datosImp <- do.call(rbind, pages)
 nombresVar<-datosImp[1,]
@@ -19,6 +20,7 @@ nombresVar[c(1,4,5,6,8,10,11,15,16,21,23,24)]<-c("Anio","GasAviacion","GasSuperi
 names(datosImp)<-nombresVar
 View(datosImp)
 
+# Limpieza de datos
 datosImp <- datosImp[-c(46, 96, 146, 196), ]
 
 
