@@ -58,11 +58,8 @@ datosImp$Total <- replaceCommas(datosImp$Total)
 # Datos to num
 datosImp[, c(1:25)] <- sapply(datosImp[, c(1:25)], as.numeric)
 
-
-as.numeric(unlist(datosImp))
-
 # Mapa de correlacion
-corrMatrix<-cor(as.numeric(datosImp[,-1],use = "pairwise.complete.obs"))
+corrMatrix<-cor(datosImp,use = "pairwise.complete.obs")
 corrplot(corrMatrix)
 
 
