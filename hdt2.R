@@ -84,21 +84,23 @@ adfTest(logDiesel)
 adfTest(diff(logDiesel))
 
 # Correlacion graf
-acf(logDiesel)
+acf(logDiesel, na.action = na.pass)
 
 # funciones de autocorrelación y autocorrelación parcial
-acf(diff(logAirPassengers),12)
-pacf(diff(logAirPassengers))
+acf(diff(logDiesel),12, na.action = na.pass)
+pacf(diff(logDiesel), na.action = na.pass)
 
+row.has.na <- apply(final, 1, function(x){any(is.na(x))})
+
+dataDieselClean <- na.omit(dataDiesel)
 # Hacer el modelo
+auto.arima(dataDieselClean)
 
-auto.arima(AirPassengers)
-
-fit <- arima(log(AirPassengers), c(0, 1, 1),seasonal = list(order = c(0, 1, 1), period = 12))
+fit <- arima(log(dataDieselClean), c(0, 1, 1),seasonal = list(order = c(0, 1, 1), period = 12))
 pred <- predict(fit, n.ahead = 10*12)
-ts.plot(AirPassengers,2.718^pred$pred, log = "y", lty = c(1,3))
+ts.plot(dataDieselClean,2.718^pred$pred, log = "y", lty = c(1,3))
 
-fit2 <- arima(log(AirPassengers), c(2, 1, 1),seasonal = list(order = c(0, 1, 0), period = 12))
+fit2 <- arima(log(dataDieselClean), c(2, 1, 1),seasonal = list(order = c(0, 1, 0), period = 12))
 
 forecastAP <- forecast(fit2, level = c(95), h = 120)
 autoplot(forecastAP)
