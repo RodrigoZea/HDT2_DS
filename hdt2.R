@@ -11,6 +11,7 @@ library(tabulizer)
 library(corrplot)
 library(dplyr)
 library(stringr)
+library(lmtest)
 
 # Lectura de Datos
 pages<-extract_tables("data.pdf") #datos2020
@@ -94,7 +95,7 @@ row.has.na <- apply(final, 1, function(x){any(is.na(x))})
 
 dataDieselClean <- na.omit(dataDiesel)
 # Hacer el modelo
-auto.arima(dataDieselClean)
+fitAuto <- auto.arima(dataDieselClean)
 
 fit <- arima(log(dataDieselClean), c(0, 1, 1),seasonal = list(order = c(0, 1, 1), period = 12))
 pred <- predict(fit, n.ahead = 10*12)
@@ -104,3 +105,22 @@ fit2 <- arima(log(dataDieselClean), c(2, 1, 1),seasonal = list(order = c(0, 1, 0
 
 forecastAP <- forecast(fit2, level = c(95), h = 120)
 autoplot(forecastAP)
+
+coeftest(fit)
+coeftest(fitAuto)
+
+qqnorm(fit$residuals)
+qqline(fit$residuals)
+checkresiduals(fit)
+
+qqnorm(fitAuto$residuals)
+qqline(fitAuto$residuals)
+checkresiduals(fitAuto)
+
+fitArima %>%
+  forecast(h) %>%
+  autoplot() + autolayer(log(test))
+
+train <- head(dataDiesel, round(length(dataDiesel),0.7))
+h <- length(dataDiesel) - length(train)
+
