@@ -124,8 +124,22 @@ ts.plot(trainDiesel, exp^(pred$pred), log="y", lty=c(1,3))
 forecastDiesel<-forecast(fitArima, level=c(95), h=7*12)
 autoplot(forecastDiesel) + autolayer(log(testDiesel))
 
-# prophet
+# prophet con diesel
 library(prophet)
+library(zoo)
+dataFrame<-data.frame(ds=as.Date(as.yearmon(time(trainDiesel))), y=as.matrix(trainDiesel))
+testDataFrame<-data.frame(ds=as.Date(as.yearmon(time(testDiesel))), y=as.matrix(testDiesel))
+fitProphet<-prophet(dataFrame, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(fitProphet, periods = 7 * 12, freq = "month", include_history = T)
+pred<-predict(fitProphet, future)
+pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
+plot(fitProphet, pred)
+prediction<-tail(pred, 61)
+prediction$y<-testDataFrame$y
+ggplot(prediction, aes(x=ds, y=yhat)) +
+  geom_line(size=1, color="blue", alpha=0.8) +
+  geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
+  geom_line(data=prediction, aes(x=ds, y=y), color="red")
 
 # 2. Regular
 dataRegular<-ts(datosImp$GasRegular, start=c(2001, 01), end=c(2020, 03), 12)
