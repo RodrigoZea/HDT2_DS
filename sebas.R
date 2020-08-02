@@ -33,32 +33,6 @@ for(i in names(datosImp)) {
   datosImp[[i]]<-replaceCommas(datosImp[[i]])
 }
 
-
-# Quitar comas
-datosImp$GLP <- replaceCommas(datosImp$GLP)
-datosImp$GasAviacion <- replaceCommas(datosImp$GasAviacion)
-datosImp$GasSuperior <- replaceCommas(datosImp$GasSuperior)
-datosImp$GasRegular <- replaceCommas(datosImp$GasRegular)
-datosImp$Kerosina <- replaceCommas(datosImp$Kerosina)
-datosImp$rTurboJet <- replaceCommas(datosImp$rTurboJet)
-datosImp$Diesel <- replaceCommas(datosImp$Diesel)
-datosImp$DieselLS <- replaceCommas(datosImp$DieselLS)
-datosImp$DieselULS <- replaceCommas(datosImp$DieselULS)
-datosImp$Bunker <- replaceCommas(datosImp$Bunker)
-datosImp$Asfalto <- replaceCommas(datosImp$Asfalto)
-datosImp$PetCoke <- replaceCommas(datosImp$PetCoke)
-datosImp$AceitesLub <- replaceCommas(datosImp$AceitesLub)
-datosImp$GrasasLub <- replaceCommas(datosImp$GrasasLub)
-datosImp$Solventes <- replaceCommas(datosImp$Solventes)
-datosImp$Naftas <- replaceCommas(datosImp$Naftas)
-datosImp$Ceras <- replaceCommas(datosImp$Ceras)
-datosImp$Butano <- replaceCommas(datosImp$Butano)
-datosImp$PetroleoReconst <- replaceCommas(datosImp$PetroleoReconst)
-datosImp$MTBE <- replaceCommas(datosImp$MTBE)
-datosImp$Orimulsion <- replaceCommas(datosImp$Orimulsion)
-datosImp$MezclasOleosas <- replaceCommas(datosImp$MezclasOleosas)
-datosImp$Total <- replaceCommas(datosImp$Total)
-
 # Datos to num
 datosImp[, c(1:25)] <- sapply(datosImp[, c(1:25)], as.numeric)
 
@@ -109,20 +83,26 @@ acf(logDiesel, 100, na.action = na.pass)
 # p = 2
 pacf(logDiesel, 100, na.action = na.pass)
 
-# 
+# Para tener una idea de los parametros estacionales.
 Acf(diff(logDiesel), 36)
 Pacf(diff(logDiesel), 36)
 
 # arima
 fitArima<-arima(log(trainDiesel), order=c(2, 1, 3), seasonal=c(1, 1, 0))
+fitArima2<-arima(log(trainDiesel), order=c(2, 1, 3), seasonal=c(0, 1, 1))
 
 # ajustar n.ahead al numero de meses que tengamos en conjunto de prueba
 pred<-predict(fitArima, 7*12)
-ts.plot(trainDiesel, exp^(pred$pred), log="y", lty=c(1,3))
+ts.plot(trainDiesel, exp(pred$pred), log="y", lty=c(1,3))
+pred2<-predict(fitArima2, 7*12)
+ts.plot(trainDiesel, exp(pred2$pred), log="y", lty=c(1,3))
 
 # h es el numero de meses a predecir
 forecastDiesel<-forecast(fitArima, level=c(95), h=7*12)
 autoplot(forecastDiesel) + autolayer(log(testDiesel))
+forecastDiesel2<-forecast(fitArima2, level=c(95), h=7*12)
+autoplot(forecastDiesel2) + autolayer(log(testDiesel))
+
 
 # prophet con diesel
 library(prophet)
