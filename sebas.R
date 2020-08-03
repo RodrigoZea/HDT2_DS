@@ -19,7 +19,6 @@ nombresVar<-datosImp[1,]
 datosImp<-as.data.frame(datosImp[2:nrow(datosImp),])
 nombresVar[c(1,4,5,6,8,10,11,15,16,21,23,24)]<-c("Anio","GasAviacion","GasSuperior","GasRegular","rTurboJet","DieselLS","DieselULS","AceitesLub","GrasasLub","PetroleoReconst","Orimulsion","MezclasOleosas")
 names(datosImp)<-nombresVar
-View(datosImp)
 
 # Limpieza de datos - quitar headers
 datosImp<-datosImp[-c(46, 96, 146, 196),]
@@ -103,7 +102,6 @@ autoplot(forecastDiesel) + autolayer(log(testDiesel))
 forecastDiesel2<-forecast(fitArima2, level=c(95), h=7*12)
 autoplot(forecastDiesel2) + autolayer(log(testDiesel))
 
-
 # prophet con diesel
 library(prophet)
 library(zoo)
@@ -116,10 +114,45 @@ pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
 plot(fitProphet, pred)
 prediction<-tail(pred, 61)
 prediction$y<-testDataFrame$y
-ggplot(prediction, aes(x=ds, y=yhat)) +
-  geom_line(size=1, color="blue", alpha=0.8) +
+ggplot(data=prediction, aes(x=ds, y=yhat)) +
+  geom_line(aes(y=yhat, colour="Real")) +
   geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
-  geom_line(data=prediction, aes(x=ds, y=y), color="red")
+  geom_line(data=prediction, aes(x=ds, y=y, colour="Prediccion")) +
+  scale_colour_manual("", breaks=c("Real", "Prediccion"), values=c("blue", "red")) +
+  labs(title="Prophet", x="Año", y="Vol. Importación")
+
+# prediccion 2018 - 2020
+# escoger el mejor modelo ARIMA
+trainDiesel2018<-dataDiesel
+dieselArima2018<-arima(log(trainDiesel2018), order=c(2, 1, 3), seasonal=c(0, 1, 1))
+dieselPred2018<-predict(dieselArima2018, 3 * 12)
+ggplot(data=log(trainDiesel2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=dieselPred2018$pred, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Diesel (ARIMA)", x="Año", y="Vol. Importación")
+
+dieselPred2020<-tail(dieselPred2018$pred, 12)
+ggplot(data=log(trainDiesel2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=dieselPred2020, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2020 para Diesel (ARIMA)", x="Año", y="Vol. Importación")
+
+# prophet
+dieselRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainDiesel2018))), y=as.matrix(trainDiesel2018))
+fitProphet<-prophet(dataFrame, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(fitProphet, periods = 3 * 12, freq = "month", include_history = T)
+pred<-predict(fitProphet, future)
+#pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
+pred<-tail(pred, 36)
+plot(fitProphet, pred)
+dieselPredDf<-data.frame(ds=as.Date(as.yearmon(pred$ds)), y=pred$yhat)
+ggplot(NULL) +
+  geom_line(data=dieselRealDf, aes(x=ds, y=y, colour="Real")) +
+  geom_line(data=dieselPredDf, aes(x=ds, y=y, colour="Prediccion")) +
+  scale_colour_manual("", breaks=c("Real", "Prediccion"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Diesel (PROPHET)", x="Año", y="Vol. Importación")
 
 # ------------------------------------------------------------------------------------------------
 
@@ -159,7 +192,7 @@ adfTest(diff(trainRegular))
 unitrootTest(diff(trainRegular))
 
 # intentar identificar parametros p y q
-# q = 3
+# q = 4
 acf(logRegular, 100, na.action = na.pass)
 # p = 2
 pacf(logRegular, 100, na.action = na.pass)
@@ -202,6 +235,16 @@ ggplot(prediction, aes(x=ds, y=yhat)) +
   geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
   geom_line(data=prediction, aes(x=ds, y=y), color="red")
 
+# prediccion 2018 - 2020
+# escoger el mejor modelo ARIMA
+trainRegular2018<-head(dataRegular, 17 * 12)
+regularArima2018<-arima(log(trainRegular2018), order=c(2, 1, 4), seasonal=c(0, 1, 1))
+regularPred2018<-predict(regularArima2018, 3 * 12)
+ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=regularPred2018$pred, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Regular (ARIMA)", x="Año", y="Vol. Importación")
 
 # ------------------------------------------------------------------------------------------------
 
@@ -242,9 +285,9 @@ adfTest(diff(trainSuperior))
 unitrootTest(diff(trainSuperior))
 
 # intentar identificar parametros p y q
-# q = 3
+# q = 1
 acf(logSuperior, 100, na.action = na.pass)
-# p = 2
+# p = 1
 pacf(logSuperior, 100, na.action = na.pass)
 
 # Para tener una idea de los parametros estacionales.
@@ -252,7 +295,7 @@ Acf(diff(logSuperior), 36)
 Pacf(diff(logSuperior), 36)
 
 # arima
-fitArima<-arima(log(trainSuperior), order=c(2, 1, 3), seasonal=c(1, 1, 0))
+fitArima<-arima(log(trainSuperior), order=c(1, 1, 1), seasonal=c(1, 1, 0))
 fitArima2<-arima(log(trainSuperior), order=c(2, 1, 3), seasonal=c(0, 1, 1))
 
 # ajustar n.ahead al numero de meses que tengamos en conjunto de prueba
@@ -284,3 +327,14 @@ ggplot(prediction, aes(x=ds, y=yhat)) +
   geom_line(size=1, color="blue", alpha=0.8) +
   geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
   geom_line(data=prediction, aes(x=ds, y=y), color="red")
+
+# prediccion 2018 - 2020
+# escoger el mejor modelo ARIMA
+trainSuperior2018<-head(dataSuperior, 17 * 12)
+superiorArima2018<-arima(log(trainSuperior2018), order=c(1, 1, 1), seasonal=c(0, 1, 1))
+superiorPred2018<-predict(superiorArima2018, 3 * 12)
+ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=superiorPred2018$pred, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Superior (ARIMA)", x="Año", y="Vol. Importación")
