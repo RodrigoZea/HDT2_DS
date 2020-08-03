@@ -121,6 +121,8 @@ ggplot(prediction, aes(x=ds, y=yhat)) +
   geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
   geom_line(data=prediction, aes(x=ds, y=y), color="red")
 
+# ------------------------------------------------------------------------------------------------
+
 # 2. Regular
 dataRegular<-ts(datosImp$GasRegular, start=c(2001, 01), end=c(2020, 03), 12)
 start(dataRegular)
@@ -133,6 +135,77 @@ plot(decRegular)
 plot(decRegular$trend)
 plot(decRegular$seasonal)
 
+# division en train / test
+trainRegular<-head(dataRegular, round(length(dataRegular) * 0.7))
+testRegular<-tail(dataRegular, round(length(dataRegular) * 0.3))
+# h se utiliza al generar el modelo y predecir
+h<-length(trainRegular) - length(testRegular)
+
+# transformacion logaritmica
+logRegular<-log(trainRegular)
+plot(decompose(logRegular))
+
+# Dickey Fuller Test
+# p > 0.05
+adfTest(trainRegular)
+
+# raices unitarias
+# p > 0.05
+unitrootTest(trainRegular)
+
+# diferenciacion, es necesario
+# d = 1
+adfTest(diff(trainRegular))
+unitrootTest(diff(trainRegular))
+
+# intentar identificar parametros p y q
+# q = 3
+acf(logRegular, 100, na.action = na.pass)
+# p = 2
+pacf(logRegular, 100, na.action = na.pass)
+
+# Para tener una idea de los parametros estacionales.
+Acf(diff(logRegular), 36)
+Pacf(diff(logRegular), 36)
+
+# arima
+fitArima<-arima(log(trainRegular), order=c(2, 1, 3), seasonal=c(1, 1, 0))
+fitArima2<-arima(log(trainRegular), order=c(2, 1, 3), seasonal=c(0, 1, 1))
+
+# ajustar n.ahead al numero de meses que tengamos en conjunto de prueba
+pred<-predict(fitArima, 7*12)
+ts.plot(trainRegular, exp(pred$pred), log="y", lty=c(1,3))
+pred2<-predict(fitArima2, 7*12)
+ts.plot(trainRegular, exp(pred2$pred), log="y", lty=c(1,3))
+
+# h es el numero de meses a predecir
+forecastRegular<-forecast(fitArima, level=c(95), h=7*12)
+autoplot(forecastRegular) + autolayer(log(testRegular))
+forecastRegular2<-forecast(fitArima2, level=c(95), h=7*12)
+autoplot(forecastRegular2) + autolayer(log(testRegular))
+
+
+# prophet con diesel
+library(prophet)
+library(zoo)
+dataFrame<-data.frame(ds=as.Date(as.yearmon(time(trainRegular))), y=as.matrix(trainRegular))
+testDataFrame<-data.frame(ds=as.Date(as.yearmon(time(testRegular))), y=as.matrix(testRegular))
+fitProphet<-prophet(dataFrame, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(fitProphet, periods = 7 * 12, freq = "month", include_history = T)
+pred<-predict(fitProphet, future)
+pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
+plot(fitProphet, pred)
+prediction<-tail(pred, 61)
+prediction$y<-testDataFrame$y
+ggplot(prediction, aes(x=ds, y=yhat)) +
+  geom_line(size=1, color="blue", alpha=0.8) +
+  geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
+  geom_line(data=prediction, aes(x=ds, y=y), color="red")
+
+
+# ------------------------------------------------------------------------------------------------
+
+
 # 3. Superior
 dataSuperior<-ts(datosImp$GasSuperior, start=c(2001, 01), end=c(2020, 03), 12)
 start(dataSuperior)
@@ -144,3 +217,70 @@ decSuperior<-decompose(dataSuperior)
 plot(decSuperior)
 plot(decSuperior$trend)
 plot(decSuperior$seasonal)
+
+# division en train / test
+trainSuperior<-head(dataSuperior, round(length(dataSuperior) * 0.7))
+testSuperior<-tail(dataSuperior, round(length(dataSuperior) * 0.3))
+# h se utiliza al generar el modelo y predecir
+h<-length(trainSuperior) - length(testSuperior)
+
+# transformacion logaritmica
+logSuperior<-log(trainSuperior)
+plot(decompose(logSuperior))
+
+# Dickey Fuller Test
+# p > 0.05
+adfTest(trainSuperior)
+
+# raices unitarias
+# p > 0.05
+unitrootTest(trainSuperior)
+
+# diferenciacion, es necesario
+# d = 1
+adfTest(diff(trainSuperior))
+unitrootTest(diff(trainSuperior))
+
+# intentar identificar parametros p y q
+# q = 3
+acf(logSuperior, 100, na.action = na.pass)
+# p = 2
+pacf(logSuperior, 100, na.action = na.pass)
+
+# Para tener una idea de los parametros estacionales.
+Acf(diff(logSuperior), 36)
+Pacf(diff(logSuperior), 36)
+
+# arima
+fitArima<-arima(log(trainSuperior), order=c(2, 1, 3), seasonal=c(1, 1, 0))
+fitArima2<-arima(log(trainSuperior), order=c(2, 1, 3), seasonal=c(0, 1, 1))
+
+# ajustar n.ahead al numero de meses que tengamos en conjunto de prueba
+pred<-predict(fitArima, 7*12)
+ts.plot(trainSuperior, exp(pred$pred), log="y", lty=c(1,3))
+pred2<-predict(fitArima2, 7*12)
+ts.plot(trainSuperior, exp(pred2$pred), log="y", lty=c(1,3))
+
+# h es el numero de meses a predecir
+forecastSuperior<-forecast(fitArima, level=c(95), h=7*12)
+autoplot(forecastSuperior) + autolayer(log(testSuperior))
+forecastSuperior2<-forecast(fitArima2, level=c(95), h=7*12)
+autoplot(forecastSuperior2) + autolayer(log(testSuperior))
+
+
+# prophet con Superior
+library(prophet)
+library(zoo)
+dataFrame<-data.frame(ds=as.Date(as.yearmon(time(trainSuperior))), y=as.matrix(trainSuperior))
+testDataFrame<-data.frame(ds=as.Date(as.yearmon(time(testSuperior))), y=as.matrix(testSuperior))
+fitProphet<-prophet(dataFrame, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(fitProphet, periods = 7 * 12, freq = "month", include_history = T)
+pred<-predict(fitProphet, future)
+pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
+plot(fitProphet, pred)
+prediction<-tail(pred, 61)
+prediction$y<-testDataFrame$y
+ggplot(prediction, aes(x=ds, y=yhat)) +
+  geom_line(size=1, color="blue", alpha=0.8) +
+  geom_ribbon(aes(ymin=yhat_lower, ymax=yhat_upper), fill="blue", alpha=0.2) +
+  geom_line(data=prediction, aes(x=ds, y=y), color="red")
