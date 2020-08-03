@@ -132,6 +132,7 @@ ggplot(data=log(trainDiesel2018), aes(x=x, y=y)) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2018 - 2020 para Diesel (ARIMA)", x="Año", y="Vol. Importación")
 
+# solo 2020
 dieselPred2020<-tail(dieselPred2018$pred, 12)
 ggplot(data=log(trainDiesel2018), aes(x=x, y=y)) +
   geom_line(aes(y=y, colour="Real")) +
@@ -140,13 +141,11 @@ ggplot(data=log(trainDiesel2018), aes(x=x, y=y)) +
   labs(title="Predicción 2020 para Diesel (ARIMA)", x="Año", y="Vol. Importación")
 
 # prophet
-dieselRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainDiesel2018))), y=as.matrix(trainDiesel2018))
-fitProphet<-prophet(dataFrame, yearly.seasonality = T, weekly.seasonality = T)
+dieselRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainDiesel2018))), y=as.matrix(log(trainDiesel2018)))
+fitProphet<-prophet(dieselRealDf, yearly.seasonality = T, weekly.seasonality = T)
 future<-make_future_dataframe(fitProphet, periods = 3 * 12, freq = "month", include_history = T)
 pred<-predict(fitProphet, future)
-#pred<-pred[, c("ds", "yhat", "yhat_lower", "yhat_upper")]
 pred<-tail(pred, 36)
-plot(fitProphet, pred)
 dieselPredDf<-data.frame(ds=as.Date(as.yearmon(pred$ds)), y=pred$yhat)
 ggplot(NULL) +
   geom_line(data=dieselRealDf, aes(x=ds, y=y, colour="Real")) +
@@ -247,7 +246,7 @@ ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
   labs(title="Predicción 2018 - 2020 para Regular (ARIMA)", x="Año", y="Vol. Importación")
 
 # prophet
-regularRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainRegular2018))), y=as.matrix(trainRegular2018))
+regularRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainRegular2018))), y=as.matrix(log(trainRegular2018)))
 regularFitProphet<-prophet(regularRealDf, yearly.seasonality = T, weekly.seasonality = T)
 future<-make_future_dataframe(regularFitProphet, periods = 3 * 12, freq = "month", include_history = T)
 regularProphetPred<-predict(regularFitProphet, future)
