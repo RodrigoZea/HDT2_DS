@@ -363,13 +363,14 @@ ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
   labs(title="Predicción 2018 - 2020 para Superior (ARIMA)", x="Año", y="Vol. Importación")
 
 # solo 2020
-superiorPred2020<-tail(superiorPred2018$pred, 12)
-ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
+superiorData2020<-head(dataSuperior, 19 * 12)
+superiorArima2020<-arima(log(superiorData2020), order=c(1, 1, 1), seasonal=c(0, 1, 1))
+superiorPred2020<-predict(superiorArima2020, 1 * 12)
+ggplot(data=log(superiorData2020), aes(x=x, y=y)) +
   geom_line(aes(y=y, colour="Real")) +
-  geom_line(data=superiorPred2020, aes(y=y, colour="Predicción")) +
+  geom_line(data=superiorPred2020$pred, aes(y=y, colour="Predicción")) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2020 para superior (ARIMA)", x="Año", y="Vol. Importación")
-
 
 # prophet
 superiorRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainSuperior2018))), y=as.matrix(log(trainSuperior2018)))
