@@ -246,10 +246,12 @@ ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
   labs(title="Predicción 2018 - 2020 para Regular (ARIMA)", x="Año", y="Vol. Importación")
 
 # solo 2020
-regularPred2020<-tail(regularPred2018$pred, 12)
-ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
+regularData2020<-head(dataRegular, 19 * 12)
+regularArima2020<-arima(log(regularData2020), order=c(2,1,4), seasonal=c(0,1,1))
+regularPred2020<-predict(regularArima2020, 1 * 12)
+ggplot(data=log(regularData2020), aes(x=x, y=y)) +
   geom_line(aes(y=y, colour="Real")) +
-  geom_line(data=regularPred2020, aes(y=y, colour="Predicción")) +
+  geom_line(data=regularPred2020$pred, aes(y=y, colour="Predicción")) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2020 para regular (ARIMA)", x="Año", y="Vol. Importación")
 
