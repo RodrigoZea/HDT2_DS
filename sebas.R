@@ -246,6 +246,19 @@ ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2018 - 2020 para Regular (ARIMA)", x="Año", y="Vol. Importación")
 
+# prophet
+regularRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainRegular2018))), y=as.matrix(trainRegular2018))
+regularFitProphet<-prophet(regularRealDf, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(regularFitProphet, periods = 3 * 12, freq = "month", include_history = T)
+regularProphetPred<-predict(regularFitProphet, future)
+regularProphetPred<-tail(regularProphetPred, 36)
+regularPredDf<-data.frame(ds=as.Date(as.yearmon(regularProphetPred$ds)), y=regularProphetPred$yhat)
+ggplot(NULL) +
+  geom_line(data=regularRealDf, aes(x=ds, y=y, colour="Real")) +
+  geom_line(data=regularPredDf, aes(x=ds, y=y, colour="Prediccion")) +
+  scale_colour_manual("", breaks=c("Real", "Prediccion"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Regular (PROPHET)", x="Año", y="Vol. Importación")
+
 # ------------------------------------------------------------------------------------------------
 
 
@@ -338,3 +351,16 @@ ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
   geom_line(data=superiorPred2018$pred, aes(y=y, colour="Predicción")) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2018 - 2020 para Superior (ARIMA)", x="Año", y="Vol. Importación")
+
+# prophet
+superiorRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainSuperior2018))), y=as.matrix(log(trainSuperior2018)))
+superiorFitProphet<-prophet(superiorRealDf, yearly.seasonality = T, weekly.seasonality = T)
+future<-make_future_dataframe(superiorFitProphet, periods = 3 * 12, freq = "month", include_history = T)
+superiorProphetPred<-predict(superiorFitProphet, future)
+superiorProphetPred<-tail(superiorProphetPred, 36)
+superiorPredDf<-data.frame(ds=as.Date(as.yearmon(superiorProphetPred$ds)), y=superiorProphetPred$yhat)
+ggplot(NULL) +
+  geom_line(data=superiorRealDf, aes(x=ds, y=y, colour="Real")) +
+  geom_line(data=superiorPredDf, aes(x=ds, y=y, colour="Prediccion")) +
+  scale_colour_manual("", breaks=c("Real", "Prediccion"), values=c("blue", "red")) +
+  labs(title="Predicción 2018 - 2020 para Superior (PROPHET)", x="Año", y="Vol. Importación")
