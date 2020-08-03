@@ -245,6 +245,15 @@ ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2018 - 2020 para Regular (ARIMA)", x="Año", y="Vol. Importación")
 
+# solo 2020
+regularPred2020<-tail(regularPred2018$pred, 12)
+ggplot(data=log(trainRegular2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=regularPred2020, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2020 para regular (ARIMA)", x="Año", y="Vol. Importación")
+
+
 # prophet
 regularRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainRegular2018))), y=as.matrix(log(trainRegular2018)))
 regularFitProphet<-prophet(regularRealDf, yearly.seasonality = T, weekly.seasonality = T)
@@ -350,6 +359,15 @@ ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
   geom_line(data=superiorPred2018$pred, aes(y=y, colour="Predicción")) +
   scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
   labs(title="Predicción 2018 - 2020 para Superior (ARIMA)", x="Año", y="Vol. Importación")
+
+# solo 2020
+superiorPred2020<-tail(superiorPred2018$pred, 12)
+ggplot(data=log(trainSuperior2018), aes(x=x, y=y)) +
+  geom_line(aes(y=y, colour="Real")) +
+  geom_line(data=superiorPred2020, aes(y=y, colour="Predicción")) +
+  scale_colour_manual("", breaks=c("Real", "Predicción"), values=c("blue", "red")) +
+  labs(title="Predicción 2020 para superior (ARIMA)", x="Año", y="Vol. Importación")
+
 
 # prophet
 superiorRealDf<-data.frame(ds=as.Date(as.yearmon(time(trainSuperior2018))), y=as.matrix(log(trainSuperior2018)))
